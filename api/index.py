@@ -6,11 +6,14 @@ A股板块涨幅监控 - Vercel API
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import time
 import warnings
 
 warnings.filterwarnings('ignore')
+
+# 北京时间
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 app = FastAPI(title="A股板块涨幅监控")
 
@@ -116,7 +119,7 @@ async def get_industry_board():
 
         return {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "同花顺"
         }
     except Exception as e:
@@ -165,7 +168,7 @@ async def get_concept_board():
 
         return {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "同花顺"
         }
     except Exception as e:
@@ -200,7 +203,7 @@ async def get_index_data():
 
         return {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "新浪财经"
         }
     except Exception as e:
@@ -210,4 +213,4 @@ async def get_index_data():
 @app.get("/api/health")
 async def health_check():
     """健康检查"""
-    return {"status": "ok", "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    return {"status": "ok", "time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S")}

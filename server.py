@@ -10,12 +10,15 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import time
 import warnings
 import os
 
 warnings.filterwarnings('ignore')
+
+# 北京时间
+BEIJING_TZ = timezone(timedelta(hours=8))
 
 app = FastAPI(title="A股板块涨幅监控")
 
@@ -125,7 +128,7 @@ async def get_industry_board():
 
         cache["industry"]["data"] = {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "同花顺"
         }
         cache["industry"]["timestamp"] = time.time()
@@ -182,7 +185,7 @@ async def get_concept_board():
 
         cache["concept"]["data"] = {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "同花顺"
         }
         cache["concept"]["timestamp"] = time.time()
@@ -230,7 +233,7 @@ async def get_index_data():
 
         cache["index"]["data"] = {
             "data": result,
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "新浪财经"
         }
         cache["index"]["timestamp"] = time.time()
@@ -246,7 +249,7 @@ async def health_check():
     """健康检查"""
     return {
         "status": "ok",
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
         "cache": {
             k: {
                 "has_data": v["data"] is not None,
