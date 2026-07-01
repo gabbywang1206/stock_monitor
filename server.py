@@ -98,6 +98,11 @@ async def get_industry_board():
                 prev_value = index_value / (1 + change_pct / 100)
                 change = index_value - prev_value
                 
+                # 获取资金流向数据
+                net_inflow = float(row["净额"]) if "净额" in row else 0
+                inflow = float(row["流入资金"]) if "流入资金" in row else 0
+                outflow = float(row["流出资金"]) if "流出资金" in row else 0
+                
                 result.append({
                     "rank": int(row["序号"]),
                     "name": str(row["行业"]),
@@ -111,6 +116,9 @@ async def get_industry_board():
                     "lead_stock": str(row["领涨股"]),
                     "lead_stock_change": round(float(row["领涨股-涨跌幅"]), 2),
                     "lead_stock_price": round(float(row["当前价"]), 2),
+                    "net_inflow": round(net_inflow, 2),
+                    "inflow": round(inflow, 2),
+                    "outflow": round(outflow, 2),
                 })
             except (ValueError, TypeError, KeyError) as e:
                 continue
@@ -147,6 +155,11 @@ async def get_concept_board():
                 prev_value = index_value / (1 + change_pct / 100)
                 change = index_value - prev_value
                 
+                # 获取资金流向数据
+                net_inflow = float(row["净额"]) if "净额" in row else 0
+                inflow = float(row["流入资金"]) if "流入资金" in row else 0
+                outflow = float(row["流出资金"]) if "流出资金" in row else 0
+                
                 result.append({
                     "rank": int(row["序号"]),
                     "name": str(row["行业"]),
@@ -160,6 +173,9 @@ async def get_concept_board():
                     "lead_stock": str(row["领涨股"]),
                     "lead_stock_change": round(float(row["领涨股-涨跌幅"]), 2),
                     "lead_stock_price": round(float(row["当前价"]), 2),
+                    "net_inflow": round(net_inflow, 2),
+                    "inflow": round(inflow, 2),
+                    "outflow": round(outflow, 2),
                 })
             except (ValueError, TypeError, KeyError) as e:
                 continue

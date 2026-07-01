@@ -89,51 +89,186 @@
             animation: pulse 2s infinite;
         }
 
-        .status-dot.loading {
-            background: #f59e0b;
-        }
-
-        .status-dot.error {
-            background: #ef4444;
-        }
+        .status-dot.loading { background: #f59e0b; }
+        .status-dot.error { background: #ef4444; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
 
-        /* 指数概览 */
-        .index-bar {
+        /* 核心指数卡片 */
+        .index-section {
+            padding: 20px 24px;
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            padding: 12px 24px;
-            display: flex;
-            gap: 24px;
-            overflow-x: auto;
         }
 
-        .index-item {
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
         }
 
-        .index-name {
-            font-size: 13px;
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .index-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .index-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .index-info h3 {
+            font-size: 14px;
             color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 4px;
         }
 
         .index-price {
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
 
         .index-change {
-            font-size: 12px;
-            padding: 2px 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .index-chart {
+            width: 80px;
+            height: 50px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: var(--accent);
+            opacity: 0.3;
+            border-radius: 2px;
+            transition: height 0.3s;
+        }
+
+        /* 资金流向区域 */
+        .fund-flow-section {
+            padding: 20px 24px;
+            background: var(--bg-primary);
+        }
+
+        .fund-flow-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .fund-flow-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .fund-flow-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon {
+            font-size: 18px;
+        }
+
+        .inflow-title { color: var(--up); }
+        .outflow-title { color: var(--down); }
+
+        .card-total {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .fund-list {
+            padding: 8px 0;
+        }
+
+        .fund-item {
+            padding: 10px 16px;
+            display: grid;
+            grid-template-columns: 30px 1fr 100px 80px;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+        .fund-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .rank-num {
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .rank-1 { color: #f59e0b; }
+        .rank-2 { color: #94a3b8; }
+        .rank-3 { color: #b45309; }
+
+        .board-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .board-change {
+            font-size: 13px;
+            padding: 2px 8px;
             border-radius: 4px;
-            font-weight: 500;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .amount {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
         }
 
         /* 主内容区 */
@@ -250,38 +385,6 @@
 
         .auto-refresh input[type="checkbox"] {
             accent-color: var(--accent);
-        }
-
-        /* 统计卡片 */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .stat-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
         }
 
         /* 表格 */
@@ -427,20 +530,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* 空状态 */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-state svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-
         /* 错误提示 */
         .error-toast {
             position: fixed;
@@ -469,7 +558,8 @@
         @media (max-width: 768px) {
             .header { padding: 12px 16px; }
             .main { padding: 12px 16px; }
-            .index-bar { padding: 8px 16px; gap: 16px; }
+            .index-section { padding: 12px 16px; }
+            .fund-flow-section { padding: 12px 16px; }
             .controls { gap: 8px; }
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 12px; }
@@ -489,10 +579,48 @@
         </div>
     </div>
 
-    <!-- 指数概览 -->
-    <div class="index-bar" id="indexBar">
-        <div class="index-item">
-            <span class="index-name">加载中...</span>
+    <!-- 核心指数 -->
+    <div class="index-section">
+        <div class="section-title">核心指数</div>
+        <div class="index-cards" id="indexCards">
+            <div class="index-card">
+                <div class="index-info">
+                    <h3>加载中...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 资金流向 -->
+    <div class="fund-flow-section">
+        <div class="fund-flow-grid">
+            <!-- 流入Top5 -->
+            <div class="fund-flow-card">
+                <div class="card-header">
+                    <div class="card-title inflow-title">
+                        <span class="icon">📈</span>
+                        板块资金流入 Top5
+                    </div>
+                    <div class="card-total up" id="totalInflow">--</div>
+                </div>
+                <div class="fund-list" id="inflowList">
+                    <div class="fund-item"><div class="board-name">加载中...</div></div>
+                </div>
+            </div>
+            
+            <!-- 流出Top5 -->
+            <div class="fund-flow-card">
+                <div class="card-header">
+                    <div class="card-title outflow-title">
+                        <span class="icon">📉</span>
+                        板块资金流出 Top5
+                    </div>
+                    <div class="card-total down" id="totalOutflow">--</div>
+                </div>
+                <div class="fund-list" id="outflowList">
+                    <div class="fund-item"><div class="board-name">加载中...</div></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -512,8 +640,8 @@
                 <option value="rank">按排名</option>
                 <option value="change_pct_desc">涨幅↓</option>
                 <option value="change_pct_asc">涨幅↑</option>
-                <option value="turnover_desc">换手率↓</option>
-                <option value="market_cap_desc">市值↓</option>
+                <option value="net_inflow_desc">净流入↓</option>
+                <option value="net_inflow_asc">净流入↑</option>
             </select>
             <label class="auto-refresh">
                 <input type="checkbox" id="autoRefresh" checked>
@@ -524,9 +652,6 @@
             </button>
         </div>
 
-        <!-- 统计卡片 -->
-        <div class="stats-row" id="statsRow"></div>
-
         <!-- 数据表格 -->
         <div class="table-container">
             <table>
@@ -536,15 +661,14 @@
                         <th>板块名称</th>
                         <th>最新价</th>
                         <th>涨跌幅</th>
-                        <th>涨跌额</th>
-                        <th>总市值</th>
-                        <th>换手率</th>
-                        <th>上涨/下跌</th>
+                        <th>净流入(亿)</th>
+                        <th>流入资金(亿)</th>
+                        <th>流出资金(亿)</th>
                         <th>领涨股</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="9" class="empty-state">加载中...</td></tr>
+                    <tr><td colspan="8" class="empty-state">加载中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -566,7 +690,7 @@
         let indexData = {};
         let isLoading = false;
         let refreshTimer = null;
-        const REFRESH_INTERVAL = 30000; // 30秒自动刷新
+        const REFRESH_INTERVAL = 30000;
 
         // Tab 切换
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -574,6 +698,7 @@
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentTab = btn.dataset.tab;
+                renderFundFlow();
                 renderTable();
             });
         });
@@ -623,7 +748,6 @@
             btn.disabled = true;
 
             try {
-                // 并行获取数据
                 const [indRes, conRes, idxRes] = await Promise.allSettled([
                     fetchData('/api/industry'),
                     fetchData('/api/concept'),
@@ -632,7 +756,7 @@
 
                 if (indRes.status === 'fulfilled' && indRes.value.data) {
                     industryData = indRes.value.data;
-                    document.getElementById('updateTime').textContent = '行业: ' + indRes.value.update_time;
+                    document.getElementById('updateTime').textContent = indRes.value.update_time;
                 }
 
                 if (conRes.status === 'fulfilled' && conRes.value.data) {
@@ -641,14 +765,12 @@
 
                 if (idxRes.status === 'fulfilled' && idxRes.value.data) {
                     indexData = idxRes.value.data;
-                    renderIndexBar();
+                    renderIndexCards();
                 }
 
-                renderStats();
+                renderFundFlow();
                 renderTable();
                 dot.className = 'status-dot';
-
-                // 隐藏错误
                 document.getElementById('errorToast').classList.remove('show');
 
             } catch (err) {
@@ -661,66 +783,82 @@
             btn.disabled = false;
         }
 
-        // 渲染指数概览
-        function renderIndexBar() {
-            const bar = document.getElementById('indexBar');
+        // 渲染指数卡片
+        function renderIndexCards() {
+            const container = document.getElementById('indexCards');
             let html = '';
             for (const [name, info] of Object.entries(indexData)) {
                 if (info.error) continue;
                 const cls = info.change_pct > 0 ? 'up' : info.change_pct < 0 ? 'down' : 'flat';
                 const sign = info.change_pct > 0 ? '+' : '';
                 html += `
-                    <div class="index-item">
-                        <span class="index-name">${name}</span>
-                        <span class="index-price ${cls}">${info.price.toFixed(2)}</span>
-                        <span class="index-change ${cls}">${sign}${info.change_pct.toFixed(2)}%</span>
+                    <div class="index-card">
+                        <div class="index-info">
+                            <h3>${name}</h3>
+                            <div class="index-price ${cls}">${info.price.toFixed(2)}</div>
+                            <div class="index-change ${cls}">${sign}${info.change.toFixed(2)} (${sign}${info.change_pct.toFixed(2)}%)</div>
+                        </div>
                     </div>
                 `;
             }
-            bar.innerHTML = html || '<div class="index-item"><span class="index-name">暂无指数数据</span></div>';
+            container.innerHTML = html || '<div class="index-card"><div class="index-info"><h3>暂无指数数据</h3></div></div>';
         }
 
-        // 渲染统计卡片
-        function renderStats() {
+        // 渲染资金流向
+        function renderFundFlow() {
             const data = currentTab === 'industry' ? industryData : conceptData;
             if (!data.length) return;
 
-            const upCount = data.filter(d => d.change_pct > 0).length;
-            const downCount = data.filter(d => d.change_pct < 0).length;
-            const flatCount = data.filter(d => d.change_pct === 0).length;
-            const avgChange = (data.reduce((s, d) => s + d.change_pct, 0) / data.length).toFixed(2);
-            const maxUp = data.reduce((m, d) => d.change_pct > m.change_pct ? d : m, data[0]);
-            const maxDown = data.reduce((m, d) => d.change_pct < m.change_pct ? d : m, data[0]);
+            // 按净流入排序
+            const sortedByInflow = [...data].sort((a, b) => b.net_inflow - a.net_inflow);
+            const top5Inflow = sortedByInflow.slice(0, 5);
+            const top5Outflow = sortedByInflow.slice(-5).reverse();
 
-            const container = document.getElementById('statsRow');
-            container.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-label">板块总数</div>
-                    <div class="stat-value">${data.length}</div>
-                    <div class="stat-sub">上涨 ${upCount} / 下跌 ${downCount} / 平盘 ${flatCount}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">平均涨跌幅</div>
-                    <div class="stat-value ${avgChange > 0 ? 'up' : avgChange < 0 ? 'down' : 'flat'}">${avgChange > 0 ? '+' : ''}${avgChange}%</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">领涨板块</div>
-                    <div class="stat-value up" style="font-size:18px">${maxUp.name}</div>
-                    <div class="stat-sub up">+${maxUp.change_pct.toFixed(2)}% · ${maxUp.lead_stock}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">领跌板块</div>
-                    <div class="stat-value down" style="font-size:18px">${maxDown.name}</div>
-                    <div class="stat-sub down">${maxDown.change_pct.toFixed(2)}% · ${maxDown.lead_stock}</div>
-                </div>
-            `;
+            // 计算总流入/流出
+            const totalIn = top5Inflow.reduce((s, d) => s + d.net_inflow, 0);
+            const totalOut = top5Outflow.reduce((s, d) => s + d.net_inflow, 0);
+
+            document.getElementById('totalInflow').textContent = `+${totalIn.toFixed(2)}亿`;
+            document.getElementById('totalOutflow').textContent = `${totalOut.toFixed(2)}亿`;
+
+            // 渲染流入列表
+            const inflowList = document.getElementById('inflowList');
+            inflowList.innerHTML = top5Inflow.map((item, i) => {
+                const cls = item.change_pct > 0 ? 'up' : item.change_pct < 0 ? 'down' : 'flat';
+                const sign = item.change_pct > 0 ? '+' : '';
+                const rankCls = i < 3 ? ` rank-${i+1}` : '';
+                return `
+                    <div class="fund-item">
+                        <div class="rank-num${rankCls}">${i+1}</div>
+                        <div class="board-name">${item.name}</div>
+                        <div class="board-change ${cls}">${sign}${item.change_pct.toFixed(2)}%</div>
+                        <div class="amount up">+${item.net_inflow.toFixed(2)}亿</div>
+                    </div>
+                `;
+            }).join('');
+
+            // 渲染流出列表
+            const outflowList = document.getElementById('outflowList');
+            outflowList.innerHTML = top5Outflow.map((item, i) => {
+                const cls = item.change_pct > 0 ? 'up' : item.change_pct < 0 ? 'down' : 'flat';
+                const sign = item.change_pct > 0 ? '+' : '';
+                const rankCls = i < 3 ? ` rank-${i+1}` : '';
+                return `
+                    <div class="fund-item">
+                        <div class="rank-num${rankCls}">${i+1}</div>
+                        <div class="board-name">${item.name}</div>
+                        <div class="board-change ${cls}">${sign}${item.change_pct.toFixed(2)}%</div>
+                        <div class="amount down">${item.net_inflow.toFixed(2)}亿</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // 渲染表格
         function renderTable() {
             let data = currentTab === 'industry' ? [...industryData] : [...conceptData];
             if (!data.length) {
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty-state">暂无数据</td></tr>';
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">暂无数据</td></tr>';
                 return;
             }
 
@@ -742,54 +880,31 @@
                 case 'change_pct_asc':
                     data.sort((a, b) => a.change_pct - b.change_pct);
                     break;
-                case 'turnover_desc':
-                    data.sort((a, b) => b.turnover_rate - a.turnover_rate);
+                case 'net_inflow_desc':
+                    data.sort((a, b) => b.net_inflow - a.net_inflow);
                     break;
-                case 'market_cap_desc':
-                    data.sort((a, b) => {
-                        const parseCap = (s) => {
-                            if (s.includes('万亿')) return parseFloat(s) * 10000;
-                            if (s.includes('亿')) return parseFloat(s);
-                            return 0;
-                        };
-                        return parseCap(b.market_cap) - parseCap(a.market_cap);
-                    });
+                case 'net_inflow_asc':
+                    data.sort((a, b) => a.net_inflow - b.net_inflow);
                     break;
             }
-
-            // 计算涨跌幅最大值（用于条形图）
-            const maxAbs = Math.max(...data.map(d => Math.abs(d.change_pct)), 1);
 
             const tbody = document.getElementById('tableBody');
             let html = '';
             data.forEach(item => {
                 const cls = item.change_pct > 0 ? 'up' : item.change_pct < 0 ? 'down' : 'flat';
                 const sign = item.change_pct > 0 ? '+' : '';
+                const netSign = item.net_inflow > 0 ? '+' : '';
                 const rankCls = item.rank <= 3 ? ` rank-${item.rank}` : '';
-                const barWidth = Math.min(Math.abs(item.change_pct) / maxAbs * 100, 100);
-                const barColor = item.change_pct > 0 ? 'var(--up)' : item.change_pct < 0 ? 'var(--down)' : 'var(--flat)';
 
                 html += `
                     <tr>
                         <td class="rank-cell${rankCls}">${item.rank}</td>
                         <td class="name-cell">${item.name}</td>
                         <td>${item.price.toFixed(2)}</td>
-                        <td>
-                            <span class="change-pct ${cls}">${sign}${item.change_pct.toFixed(2)}%</span>
-                            <div class="bar-container">
-                                <div class="bar-fill" style="width:${barWidth}%;background:${barColor}"></div>
-                            </div>
-                        </td>
-                        <td class="${cls}">${sign}${item.change.toFixed(2)}</td>
-                        <td>${item.market_cap}</td>
-                        <td>${item.turnover_rate.toFixed(2)}%</td>
-                        <td>
-                            <div class="updown">
-                                <span class="updown-count up">${item.up_count}</span>
-                                <span style="color:var(--text-muted)">/</span>
-                                <span class="updown-count down">${item.down_count}</span>
-                            </div>
-                        </td>
+                        <td><span class="change-pct ${cls}">${sign}${item.change_pct.toFixed(2)}%</span></td>
+                        <td class="${item.net_inflow > 0 ? 'up' : 'down'}">${netSign}${item.net_inflow.toFixed(2)}</td>
+                        <td>${item.inflow.toFixed(2)}</td>
+                        <td>${item.outflow.toFixed(2)}</td>
                         <td class="lead-stock">
                             <span class="${cls}">${item.lead_stock}</span>
                             <span style="color:var(--text-muted);font-size:11px;margin-left:4px">${item.lead_stock_change > 0 ? '+' : ''}${item.lead_stock_change.toFixed(2)}%</span>
@@ -798,8 +913,7 @@
                 `;
             });
 
-            tbody.innerHTML = html || '<tr><td colspan="9" class="empty-state">无匹配结果</td></tr>';
-            renderStats();
+            tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">无匹配结果</td></tr>';
         }
 
         // 错误提示
