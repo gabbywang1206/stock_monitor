@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A股板块涨幅监控</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-hover: #243044;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2d3748;
+            --accent: #3b82f6;
+            --up: #ef4444;
+            --up-bg: rgba(239, 68, 68, 0.1);
+            --down: #22c55e;
+            --down-bg: rgba(34, 197, 94, 0.1);
+            --flat: #9ca3af;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* 顶部栏 */
+        .header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #0f1724 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .update-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.loading {
+            background: #f59e0b;
+        }
+
+        .status-dot.error {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 指数概览 */
+        .index-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            gap: 24px;
+            overflow-x: auto;
+        }
+
+        .index-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .index-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .index-price {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .index-change {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* 主内容区 */
+        .main {
+            padding: 20px 24px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* 控制栏 */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab-group {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0 12px;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 8px;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .sort-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+
+        /* 统计卡片 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* 表格 */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            color: var(--text-primary);
+        }
+
+        th.sorted {
+            color: var(--accent);
+        }
+
+        td {
+            padding: 10px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(45, 55, 72, 0.5);
+            white-space: nowrap;
+        }
+
+        tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        .rank-cell {
+            font-weight: 700;
+            width: 50px;
+        }
+
+        .rank-1 { color: #f59e0b; }
+        .rank-2 { color: #94a3b8; }
+        .rank-3 { color: #b45309; }
+
+        .name-cell {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .change-pct {
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .up { color: var(--up); background: var(--up-bg); }
+        .down { color: var(--down); background: var(--down-bg); }
+        .flat { color: var(--flat); }
+
+        .bar-container {
+            width: 80px;
+            height: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .updown {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .updown-count {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .lead-stock {
+            font-size: 13px;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 23, 0.7);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* 错误提示 */
+        .error-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #7f1d1d;
+            color: #fca5a5;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 300;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error-toast.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header { padding: 12px 16px; }
+            .main { padding: 12px 16px; }
+            .index-bar { padding: 8px 16px; gap: 16px; }
+            .controls { gap: 8px; }
+            .search-box { max-width: 100%; }
+            th, td { padding: 8px 10px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">A</div>
+            <span class="title">A股板块涨幅监控</span>
+        </div>
+        <div class="header-right">
+            <span class="update-time" id="updateTime">--</span>
+            <div class="status-dot" id="statusDot"></div>
+        </div>
+    </div>
+
+    <!-- 指数概览 -->
+    <div class="index-bar" id="indexBar">
+        <div class="index-item">
+            <span class="index-name">加载中...</span>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main">
+        <!-- 控制栏 -->
+        <div class="controls">
+            <div class="tab-group">
+                <button class="tab-btn active" data-tab="industry">行业板块</button>
+                <button class="tab-btn" data-tab="concept">概念板块</button>
+            </div>
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="searchInput" placeholder="搜索板块名称...">
+            </div>
+            <select class="sort-select" id="sortSelect">
+                <option value="rank">按排名</option>
+                <option value="change_pct_desc">涨幅↓</option>
+                <option value="change_pct_asc">涨幅↑</option>
+                <option value="turnover_desc">换手率↓</option>
+                <option value="market_cap_desc">市值↓</option>
+            </select>
+            <label class="auto-refresh">
+                <input type="checkbox" id="autoRefresh" checked>
+                自动刷新
+            </label>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                ↻ 刷新
+            </button>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-row" id="statsRow"></div>
+
+        <!-- 数据表格 -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>板块名称</th>
+                        <th>最新价</th>
+                        <th>涨跌幅</th>
+                        <th>涨跌额</th>
+                        <th>总市值</th>
+                        <th>换手率</th>
+                        <th>上涨/下跌</th>
+                        <th>领涨股</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="9" class="empty-state">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div class="error-toast" id="errorToast"></div>
+
+    <script>
+        // 全局状态
+        let currentTab = 'industry';
+        let industryData = [];
+        let conceptData = [];
+        let indexData = {};
+        let isLoading = false;
+        let refreshTimer = null;
+        const REFRESH_INTERVAL = 30000; // 30秒自动刷新
+
+        // Tab 切换
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTab = btn.dataset.tab;
+                renderTable();
+            });
+        });
+
+        // 搜索
+        document.getElementById('searchInput').addEventListener('input', () => renderTable());
+
+        // 排序
+        document.getElementById('sortSelect').addEventListener('change', () => renderTable());
+
+        // 自动刷新
+        document.getElementById('autoRefresh').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        function startAutoRefresh() {
+            stopAutoRefresh();
+            refreshTimer = setInterval(() => refreshData(), REFRESH_INTERVAL);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+        }
+
+        // 获取数据
+        async function fetchData(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        }
+
+        // 刷新数据
+        async function refreshData() {
+            if (isLoading) return;
+            isLoading = true;
+
+            const dot = document.getElementById('statusDot');
+            const btn = document.getElementById('refreshBtn');
+            dot.className = 'status-dot loading';
+            btn.disabled = true;
+
+            try {
+                // 并行获取数据
+                const [indRes, conRes, idxRes] = await Promise.allSettled([
+                    fetchData('/api/industry'),
+                    fetchData('/api/concept'),
+                    fetchData('/api/index'),
+                ]);
+
+                if (indRes.status === 'fulfilled' && indRes.value.data) {
+                    industryData = indRes.value.data;
+                    document.getElementById('updateTime').textContent = '行业: ' + indRes.value.update_time;
+                }
+
+                if (conRes.status === 'fulfilled' && conRes.value.data) {
+                    conceptData = conRes.value.data;
+                }
+
+                if (idxRes.status === 'fulfilled' && idxRes.value.data) {
+                    indexData = idxRes.value.data;
+                    renderIndexBar();
+                }
+
+                renderStats();
+                renderTable();
+                dot.className = 'status-dot';
+
+                // 隐藏错误
+                document.getElementById('errorToast').classList.remove('show');
+
+            } catch (err) {
+                console.error('刷新失败:', err);
+                dot.className = 'status-dot error';
+                showError('数据加载失败: ' + err.message);
+            }
+
+            isLoading = false;
+            btn.disabled = false;
+        }
+
+        // 渲染指数概览
+        function renderIndexBar() {
+            const bar = document.getElementById('indexBar');
+            let html = '';
+            for (const [name, info] of Object.entries(indexData)) {
+                if (info.error) continue;
+                const cls = info.change_pct > 0 ? 'up' : info.change_pct < 0 ? 'down' : 'flat';
+                const sign = info.change_pct > 0 ? '+' : '';
+                html += `
+                    <div class="index-item">
+                        <span class="index-name">${name}</span>
+                        <span class="index-price ${cls}">${info.price.toFixed(2)}</span>
+                        <span class="index-change ${cls}">${sign}${info.change_pct.toFixed(2)}%</span>
+                    </div>
+                `;
+            }
+            bar.innerHTML = html || '<div class="index-item"><span class="index-name">暂无指数数据</span></div>';
+        }
+
+        // 渲染统计卡片
+        function renderStats() {
+            const data = currentTab === 'industry' ? industryData : conceptData;
+            if (!data.length) return;
+
+            const upCount = data.filter(d => d.change_pct > 0).length;
+            const downCount = data.filter(d => d.change_pct < 0).length;
+            const flatCount = data.filter(d => d.change_pct === 0).length;
+            const avgChange = (data.reduce((s, d) => s + d.change_pct, 0) / data.length).toFixed(2);
+            const maxUp = data.reduce((m, d) => d.change_pct > m.change_pct ? d : m, data[0]);
+            const maxDown = data.reduce((m, d) => d.change_pct < m.change_pct ? d : m, data[0]);
+
+            const container = document.getElementById('statsRow');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">板块总数</div>
+                    <div class="stat-value">${data.length}</div>
+                    <div class="stat-sub">上涨 ${upCount} / 下跌 ${downCount} / 平盘 ${flatCount}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">平均涨跌幅</div>
+                    <div class="stat-value ${avgChange > 0 ? 'up' : avgChange < 0 ? 'down' : 'flat'}">${avgChange > 0 ? '+' : ''}${avgChange}%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">领涨板块</div>
+                    <div class="stat-value up" style="font-size:18px">${maxUp.name}</div>
+                    <div class="stat-sub up">+${maxUp.change_pct.toFixed(2)}% · ${maxUp.lead_stock}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">领跌板块</div>
+                    <div class="stat-value down" style="font-size:18px">${maxDown.name}</div>
+                    <div class="stat-sub down">${maxDown.change_pct.toFixed(2)}% · ${maxDown.lead_stock}</div>
+                </div>
+            `;
+        }
+
+        // 渲染表格
+        function renderTable() {
+            let data = currentTab === 'industry' ? [...industryData] : [...conceptData];
+            if (!data.length) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" class="empty-state">暂无数据</td></tr>';
+                return;
+            }
+
+            // 搜索过滤
+            const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (keyword) {
+                data = data.filter(d => d.name.toLowerCase().includes(keyword) || d.lead_stock.toLowerCase().includes(keyword));
+            }
+
+            // 排序
+            const sort = document.getElementById('sortSelect').value;
+            switch (sort) {
+                case 'rank':
+                    data.sort((a, b) => a.rank - b.rank);
+                    break;
+                case 'change_pct_desc':
+                    data.sort((a, b) => b.change_pct - a.change_pct);
+                    break;
+                case 'change_pct_asc':
+                    data.sort((a, b) => a.change_pct - b.change_pct);
+                    break;
+                case 'turnover_desc':
+                    data.sort((a, b) => b.turnover_rate - a.turnover_rate);
+                    break;
+                case 'market_cap_desc':
+                    data.sort((a, b) => {
+                        const parseCap = (s) => {
+                            if (s.includes('万亿')) return parseFloat(s) * 10000;
+                            if (s.includes('亿')) return parseFloat(s);
+                            return 0;
+                        };
+                        return parseCap(b.market_cap) - parseCap(a.market_cap);
+                    });
+                    break;
+            }
+
+            // 计算涨跌幅最大值（用于条形图）
+            const maxAbs = Math.max(...data.map(d => Math.abs(d.change_pct)), 1);
+
+            const tbody = document.getElementById('tableBody');
+            let html = '';
+            data.forEach(item => {
+                const cls = item.change_pct > 0 ? 'up' : item.change_pct < 0 ? 'down' : 'flat';
+                const sign = item.change_pct > 0 ? '+' : '';
+                const rankCls = item.rank <= 3 ? ` rank-${item.rank}` : '';
+                const barWidth = Math.min(Math.abs(item.change_pct) / maxAbs * 100, 100);
+                const barColor = item.change_pct > 0 ? 'var(--up)' : item.change_pct < 0 ? 'var(--down)' : 'var(--flat)';
+
+                html += `
+                    <tr>
+                        <td class="rank-cell${rankCls}">${item.rank}</td>
+                        <td class="name-cell">${item.name}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                        <td>
+                            <span class="change-pct ${cls}">${sign}${item.change_pct.toFixed(2)}%</span>
+                            <div class="bar-container">
+                                <div class="bar-fill" style="width:${barWidth}%;background:${barColor}"></div>
+                            </div>
+                        </td>
+                        <td class="${cls}">${sign}${item.change.toFixed(2)}</td>
+                        <td>${item.market_cap}</td>
+                        <td>${item.turnover_rate.toFixed(2)}%</td>
+                        <td>
+                            <div class="updown">
+                                <span class="updown-count up">${item.up_count}</span>
+                                <span style="color:var(--text-muted)">/</span>
+                                <span class="updown-count down">${item.down_count}</span>
+                            </div>
+                        </td>
+                        <td class="lead-stock">
+                            <span class="${cls}">${item.lead_stock}</span>
+                            <span style="color:var(--text-muted);font-size:11px;margin-left:4px">${item.lead_stock_change > 0 ? '+' : ''}${item.lead_stock_change.toFixed(2)}%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="9" class="empty-state">无匹配结果</td></tr>';
+            renderStats();
+        }
+
+        // 错误提示
+        function showError(msg) {
+            const toast = document.getElementById('errorToast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 5000);
+        }
+
+        // 初始化
+        (async function init() {
+            await refreshData();
+            startAutoRefresh();
+        })();
+    </script>
+</body>
+</html>
