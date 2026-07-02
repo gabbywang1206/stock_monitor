@@ -575,6 +575,7 @@
         </div>
         <div class="header-right">
             <span class="update-time" id="updateTime">--</span>
+            <span class="refresh-countdown" id="refreshCountdown" style="font-size:12px;color:var(--text-muted);margin-left:8px"></span>
             <div class="status-dot" id="statusDot"></div>
         </div>
     </div>
@@ -690,7 +691,8 @@
         let indexData = {};
         let isLoading = false;
         let refreshTimer = null;
-        const REFRESH_INTERVAL = 30000;
+        const REFRESH_INTERVAL = 5000; // 5秒自动刷新
+        let countdown = 5;
 
         // Tab 切换
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -720,13 +722,32 @@
 
         function startAutoRefresh() {
             stopAutoRefresh();
-            refreshTimer = setInterval(() => refreshData(), REFRESH_INTERVAL);
+            countdown = 5;
+            updateCountdown();
+            refreshTimer = setInterval(() => {
+                countdown--;
+                updateCountdown();
+                if (countdown <= 0) {
+                    refreshData();
+                    countdown = 5;
+                }
+            }, 1000);
         }
 
         function stopAutoRefresh() {
             if (refreshTimer) {
                 clearInterval(refreshTimer);
                 refreshTimer = null;
+            }
+            document.getElementById('refreshCountdown').textContent = '';
+        }
+
+        function updateCountdown() {
+            const countdownEl = document.getElementById('refreshCountdown');
+            if (document.getElementById('autoRefresh').checked) {
+                countdownEl.textContent = `${countdown}s后刷新`;
+            } else {
+                countdownEl.textContent = '';
             }
         }
 

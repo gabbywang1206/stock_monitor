@@ -32,7 +32,7 @@ cache = {
     "concept": {"data": None, "timestamp": 0},
     "index": {"data": None, "timestamp": 0},
 }
-CACHE_TTL = 60  # 缓存60秒
+CACHE_TTL = 5  # 缓存5秒，更实时
 
 
 def retry_request(func, max_retries=3, delay=2):

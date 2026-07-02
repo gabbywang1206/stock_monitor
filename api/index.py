@@ -23,7 +23,7 @@ cache = {
     "concept": {"data": None, "timestamp": 0},
     "index": {"data": None, "timestamp": 0},
 }
-CACHE_TTL = 60
+CACHE_TTL = 5
 
 
 def retry_request(func, max_retries=2, delay=1):
