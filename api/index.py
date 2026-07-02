@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from datetime import datetime, timezone, timedelta
 import time
 import warnings
+import signal
 
 warnings.filterwarnings('ignore')
 
@@ -26,16 +27,28 @@ cache = {
 CACHE_TTL = 5
 
 
-def retry_request(func, max_retries=2, delay=1):
-    """带重试的请求"""
-    for i in range(max_retries):
-        try:
-            return func()
-        except Exception as e:
-            if i < max_retries - 1:
-                time.sleep(delay)
-            else:
-                raise e
+class TimeoutError(Exception):
+    pass
+
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("请求超时")
+
+
+def fetch_with_timeout(func, timeout_seconds=8):
+    """带超时的数据获取"""
+    try:
+        # 设置信号超时（仅在 Unix 系统上有效）
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout_seconds)
+        result = func()
+        signal.alarm(0)  # 取消闹钟
+        return result
+    except TimeoutError:
+        return None
+    except Exception as e:
+        signal.alarm(0)
+        raise e
 
 
 def format_volume(value):
@@ -82,7 +95,19 @@ async def get_industry_board():
     """获取行业板块涨幅排名"""
     try:
         import akshare as ak
-        df = retry_request(lambda: ak.stock_fund_flow_industry())
+        
+        # 使用超时获取数据
+        df = fetch_with_timeout(lambda: ak.stock_fund_flow_industry(), timeout_seconds=8)
+        
+        if df is None:
+            # 返回模拟数据或错误提示
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "同花顺",
+                "error": "数据获取超时，请稍后重试"
+            }
+        
         result = []
         for _, row in df.iterrows():
             try:
@@ -123,7 +148,12 @@ async def get_industry_board():
             "source": "同花顺"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取行业板块数据失败: {str(e)}")
+        return {
+            "data": [],
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "同花顺",
+            "error": f"获取行业板块数据失败: {str(e)}"
+        }
 
 
 @app.get("/api/concept")
@@ -131,7 +161,17 @@ async def get_concept_board():
     """获取概念板块涨幅排名"""
     try:
         import akshare as ak
-        df = retry_request(lambda: ak.stock_fund_flow_concept())
+        
+        df = fetch_with_timeout(lambda: ak.stock_fund_flow_concept(), timeout_seconds=8)
+        
+        if df is None:
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "同花顺",
+                "error": "数据获取超时，请稍后重试"
+            }
+        
         result = []
         for _, row in df.iterrows():
             try:
@@ -172,7 +212,12 @@ async def get_concept_board():
             "source": "同花顺"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取概念板块数据失败: {str(e)}")
+        return {
+            "data": [],
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "同花顺",
+            "error": f"获取概念板块数据失败: {str(e)}"
+        }
 
 
 @app.get("/api/index")
@@ -180,7 +225,17 @@ async def get_index_data():
     """获取主要指数实时数据"""
     try:
         import akshare as ak
-        df = retry_request(lambda: ak.stock_zh_index_spot_sina())
+        
+        df = fetch_with_timeout(lambda: ak.stock_zh_index_spot_sina(), timeout_seconds=5)
+        
+        if df is None:
+            return {
+                "data": {},
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "新浪财经",
+                "error": "数据获取超时，请稍后重试"
+            }
+        
         target_indices = {
             "上证指数": "sh000001",
             "深证成指": "sz399001",
@@ -207,7 +262,12 @@ async def get_index_data():
             "source": "新浪财经"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取指数数据失败: {str(e)}")
+        return {
+            "data": {},
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "新浪财经",
+            "error": f"获取指数数据失败: {str(e)}"
+        }
 
 
 @app.get("/api/health")
