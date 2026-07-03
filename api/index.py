@@ -281,40 +281,47 @@ async def health_check():
 async def get_stock_gain():
     """获取今日个股涨幅榜 Top100"""
     try:
-        import akshare as ak
+        import requests
+        import pandas as pd
+        from io import StringIO
         
-        # 使用 stock_zh_a_spot 获取数据
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=9)
+        url = 'http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeDataSimple'
+        params = {
+            'page': 1,
+            'num': 100,
+            'sort': 'changepercent',
+            'asc': 0,  # 降序
+            'node': 'hs_a',
+            '_s_r_a': 'page'
+        }
         
-        if df is None or df.empty:
-            return {
-                "data": [],
-                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "数据获取超时，请稍后刷新"
-            }
-        
-        # 按涨跌幅排序，取前100
-        df = df.sort_values(by='涨跌幅', ascending=False).head(100)
+        response = requests.get(url, params=params, timeout=5)
+        df = pd.read_json(StringIO(response.text))
         
         result = []
         for idx, row in df.iterrows():
             try:
+                # 过滤 ST 股票
+                name = str(row['name'])
+                if 'ST' in name or '*ST' in name:
+                    continue
+                    
                 result.append({
                     "rank": len(result) + 1,
-                    "code": str(row['代码']),
-                    "name": str(row['名称']),
-                    "price": round(float(row['最新价']), 2),
-                    "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row['涨跌额']), 2),
-                    "volume": format_volume(row['成交量']) if pd.notna(row['成交量']) else '--',
-                    "amount": format_volume(row['成交额']) if pd.notna(row['成交额']) else '--',
+                    "code": str(row['symbol']),
+                    "name": name,
+                    "price": round(float(row['trade']), 2),
+                    "change_pct": round(float(row['changepercent']), 2),
+                    "change": round(float(row['pricechange']), 2),
+                    "volume": format_volume(row['volume']) if pd.notna(row['volume']) else '--',
+                    "amount": format_volume(row['amount']) if pd.notna(row['amount']) else '--',
                     "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
         
         return {
-            "data": result,
+            "data": result[:100],
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "新浪财经"
         }
@@ -330,39 +337,47 @@ async def get_stock_gain():
 async def get_stock_drop():
     """获取今日个股跌幅榜 Top100"""
     try:
-        import akshare as ak
+        import requests
+        import pandas as pd
+        from io import StringIO
         
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=9)
+        url = 'http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeDataSimple'
+        params = {
+            'page': 1,
+            'num': 100,
+            'sort': 'changepercent',
+            'asc': 1,  # 升序 -> 跌幅最大
+            'node': 'hs_a',
+            '_s_r_a': 'page'
+        }
         
-        if df is None or df.empty:
-            return {
-                "data": [],
-                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "数据获取超时，请稍后刷新"
-            }
-        
-        # 按涨跌幅排序，取跌幅最大的100个
-        df = df.sort_values(by='涨跌幅', ascending=True).head(100)
+        response = requests.get(url, params=params, timeout=5)
+        df = pd.read_json(StringIO(response.text))
         
         result = []
         for idx, row in df.iterrows():
             try:
+                # 过滤 ST 股票
+                name = str(row['name'])
+                if 'ST' in name or '*ST' in name:
+                    continue
+                    
                 result.append({
                     "rank": len(result) + 1,
-                    "code": str(row['代码']),
-                    "name": str(row['名称']),
-                    "price": round(float(row['最新价']), 2),
-                    "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row['涨跌额']), 2),
-                    "volume": format_volume(row['成交量']) if pd.notna(row['成交量']) else '--',
-                    "amount": format_volume(row['成交额']) if pd.notna(row['成交额']) else '--',
+                    "code": str(row['symbol']),
+                    "name": name,
+                    "price": round(float(row['trade']), 2),
+                    "change_pct": round(float(row['changepercent']), 2),
+                    "change": round(float(row['pricechange']), 2),
+                    "volume": format_volume(row['volume']) if pd.notna(row['volume']) else '--',
+                    "amount": format_volume(row['amount']) if pd.notna(row['amount']) else '--',
                     "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
         
         return {
-            "data": result,
+            "data": result[:100],
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             "source": "新浪财经"
         }
