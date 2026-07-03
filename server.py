@@ -263,17 +263,11 @@ async def health_check():
 async def get_stock_gain():
     """获取今日个股涨幅榜 Top100"""
     try:
-        df = retry_request(lambda: ak.stock_zt_pool_em(date=None))
-        
-        if df is None or df.empty:
-            return {
-                "data": [],
-                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "暂无涨停数据"
-            }
+        df = retry_request(lambda: ak.stock_zh_a_spot_sina())
+        df = df.sort_values(by='涨跌幅', ascending=False).head(100)
         
         result = []
-        for idx, row in df.head(100).iterrows():
+        for idx, row in df.iterrows():
             try:
                 result.append({
                     "rank": len(result) + 1,
@@ -281,10 +275,10 @@ async def get_stock_gain():
                     "name": str(row['名称']),
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row.get('涨跌额', 0)), 2),
-                    "volume": format_volume(row.get('成交额', 0)),
-                    "amount": format_volume(row.get('成交额', 0)),
-                    "turnover_rate": round(float(row.get('换手率', 0)), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row.get('成交量', '--')),
+                    "amount": str(row.get('成交额', '--')),
+                    "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
@@ -292,7 +286,7 @@ async def get_stock_gain():
         return {
             "data": result,
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "东方财富"
+            "source": "新浪财经"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取涨幅榜失败: {str(e)}")
@@ -302,17 +296,11 @@ async def get_stock_gain():
 async def get_stock_drop():
     """获取今日个股跌幅榜 Top100"""
     try:
-        df = retry_request(lambda: ak.stock_dt_pool_em(date=None))
-        
-        if df is None or df.empty:
-            return {
-                "data": [],
-                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "暂无跌停数据"
-            }
+        df = retry_request(lambda: ak.stock_zh_a_spot_sina())
+        df = df.sort_values(by='涨跌幅', ascending=True).head(100)
         
         result = []
-        for idx, row in df.head(100).iterrows():
+        for idx, row in df.iterrows():
             try:
                 result.append({
                     "rank": len(result) + 1,
@@ -320,10 +308,10 @@ async def get_stock_drop():
                     "name": str(row['名称']),
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row.get('涨跌额', 0)), 2),
-                    "volume": format_volume(row.get('成交额', 0)),
-                    "amount": format_volume(row.get('成交额', 0)),
-                    "turnover_rate": round(float(row.get('换手率', 0)), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row.get('成交量', '--')),
+                    "amount": str(row.get('成交额', '--')),
+                    "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
@@ -331,7 +319,7 @@ async def get_stock_drop():
         return {
             "data": result,
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "东方财富"
+            "source": "新浪财经"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取跌幅榜失败: {str(e)}")

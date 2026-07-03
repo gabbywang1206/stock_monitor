@@ -282,8 +282,8 @@ async def get_stock_gain():
     try:
         import akshare as ak
         
-        # 使用涨停板数据，更稳定
-        df = fetch_with_timeout(lambda: ak.stock_zt_pool_em(date=None), timeout_seconds=8)
+        # 使用新浪实时行情，更稳定
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_sina(), timeout_seconds=8)
         
         if df is None or df.empty:
             return {
@@ -292,8 +292,11 @@ async def get_stock_gain():
                 "error": "数据获取超时"
             }
         
+        # 按涨跌幅排序，取前100
+        df = df.sort_values(by='涨跌幅', ascending=False).head(100)
+        
         result = []
-        for idx, row in df.head(100).iterrows():
+        for idx, row in df.iterrows():
             try:
                 result.append({
                     "rank": len(result) + 1,
@@ -301,10 +304,10 @@ async def get_stock_gain():
                     "name": str(row['名称']),
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row.get('涨跌额', 0)), 2),
-                    "volume": str(row.get('成交额', '--')),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row.get('成交量', '--')),
                     "amount": str(row.get('成交额', '--')),
-                    "turnover_rate": round(float(row.get('换手率', 0)), 2),
+                    "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
@@ -312,7 +315,7 @@ async def get_stock_gain():
         return {
             "data": result,
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "东方财富"
+            "source": "新浪财经"
         }
     except Exception as e:
         return {
@@ -328,8 +331,7 @@ async def get_stock_drop():
     try:
         import akshare as ak
         
-        # 使用跌停板数据
-        df = fetch_with_timeout(lambda: ak.stock_dt_pool_em(date=None), timeout_seconds=8)
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_sina(), timeout_seconds=8)
         
         if df is None or df.empty:
             return {
@@ -338,8 +340,11 @@ async def get_stock_drop():
                 "error": "数据获取超时"
             }
         
+        # 按涨跌幅排序，取跌幅最大的100个
+        df = df.sort_values(by='涨跌幅', ascending=True).head(100)
+        
         result = []
-        for idx, row in df.head(100).iterrows():
+        for idx, row in df.iterrows():
             try:
                 result.append({
                     "rank": len(result) + 1,
@@ -347,10 +352,10 @@ async def get_stock_drop():
                     "name": str(row['名称']),
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
-                    "change": round(float(row.get('涨跌额', 0)), 2),
-                    "volume": str(row.get('成交额', '--')),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row.get('成交量', '--')),
                     "amount": str(row.get('成交额', '--')),
-                    "turnover_rate": round(float(row.get('换手率', 0)), 2),
+                    "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
                 continue
@@ -358,7 +363,7 @@ async def get_stock_drop():
         return {
             "data": result,
             "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "东方财富"
+            "source": "新浪财经"
         }
     except Exception as e:
         return {
