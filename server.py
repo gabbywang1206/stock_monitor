@@ -264,6 +264,13 @@ async def get_stock_gain():
     """获取今日个股涨幅榜 Top100"""
     try:
         df = retry_request(lambda: ak.stock_zh_a_spot(), max_retries=2, delay=3)
+        if df is None or df.empty:
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "error": "数据获取超时"
+            }
+        
         df = df.sort_values(by='涨跌幅', ascending=False).head(100)
         
         result = []
@@ -297,6 +304,13 @@ async def get_stock_drop():
     """获取今日个股跌幅榜 Top100"""
     try:
         df = retry_request(lambda: ak.stock_zh_a_spot(), max_retries=2, delay=3)
+        if df is None or df.empty:
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "error": "数据获取超时"
+            }
+        
         df = df.sort_values(by='涨跌幅', ascending=True).head(100)
         
         result = []

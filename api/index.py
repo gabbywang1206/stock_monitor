@@ -284,13 +284,13 @@ async def get_stock_gain():
         import akshare as ak
         
         # 使用 stock_zh_a_spot 获取数据
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=15)
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=9)
         
         if df is None or df.empty:
             return {
                 "data": [],
                 "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "数据获取超时"
+                "error": "数据获取超时，请稍后刷新"
             }
         
         # 按涨跌幅排序，取前100
@@ -332,13 +332,13 @@ async def get_stock_drop():
     try:
         import akshare as ak
         
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=15)
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=9)
         
         if df is None or df.empty:
             return {
                 "data": [],
                 "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
-                "error": "数据获取超时"
+                "error": "数据获取超时，请稍后刷新"
             }
         
         # 按涨跌幅排序，取跌幅最大的100个
