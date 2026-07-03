@@ -7,6 +7,7 @@ A股板块涨幅监控 - Vercel API
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from datetime import datetime, timezone, timedelta
+import pandas as pd
 import time
 import warnings
 import signal
@@ -282,8 +283,8 @@ async def get_stock_gain():
     try:
         import akshare as ak
         
-        # 使用新浪实时行情，更稳定
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_sina(), timeout_seconds=8)
+        # 使用 stock_zh_a_spot 获取数据
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=15)
         
         if df is None or df.empty:
             return {
@@ -305,8 +306,8 @@ async def get_stock_gain():
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
                     "change": round(float(row['涨跌额']), 2),
-                    "volume": str(row.get('成交量', '--')),
-                    "amount": str(row.get('成交额', '--')),
+                    "volume": format_volume(row['成交量']) if pd.notna(row['成交量']) else '--',
+                    "amount": format_volume(row['成交额']) if pd.notna(row['成交额']) else '--',
                     "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
@@ -331,7 +332,7 @@ async def get_stock_drop():
     try:
         import akshare as ak
         
-        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_sina(), timeout_seconds=8)
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot(), timeout_seconds=15)
         
         if df is None or df.empty:
             return {
@@ -353,8 +354,8 @@ async def get_stock_drop():
                     "price": round(float(row['最新价']), 2),
                     "change_pct": round(float(row['涨跌幅']), 2),
                     "change": round(float(row['涨跌额']), 2),
-                    "volume": str(row.get('成交量', '--')),
-                    "amount": str(row.get('成交额', '--')),
+                    "volume": format_volume(row['成交量']) if pd.notna(row['成交量']) else '--',
+                    "amount": format_volume(row['成交额']) if pd.notna(row['成交额']) else '--',
                     "turnover_rate": 0,
                 })
             except (ValueError, TypeError, KeyError):
