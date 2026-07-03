@@ -259,6 +259,72 @@ async def health_check():
     }
 
 
+@app.get("/api/stock_gain")
+async def get_stock_gain():
+    """获取今日个股涨幅榜 Top100"""
+    try:
+        df = retry_request(lambda: ak.stock_zh_a_spot_em())
+        df = df.sort_values(by='涨跌幅', ascending=False).head(100)
+        
+        result = []
+        for idx, row in df.iterrows():
+            try:
+                result.append({
+                    "rank": len(result) + 1,
+                    "code": str(row['代码']),
+                    "name": str(row['名称']),
+                    "price": round(float(row['最新价']), 2),
+                    "change_pct": round(float(row['涨跌幅']), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": format_volume(row['成交量']) if '成交量' in row else '--',
+                    "amount": format_volume(row['成交额']) if '成交额' in row else '--',
+                    "turnover_rate": round(float(row['换手率']), 2) if '换手率' in row else 0,
+                })
+            except (ValueError, TypeError, KeyError):
+                continue
+        
+        return {
+            "data": result,
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "东方财富"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取涨幅榜失败: {str(e)}")
+
+
+@app.get("/api/stock_drop")
+async def get_stock_drop():
+    """获取今日个股跌幅榜 Top100"""
+    try:
+        df = retry_request(lambda: ak.stock_zh_a_spot_em())
+        df = df.sort_values(by='涨跌幅', ascending=True).head(100)
+        
+        result = []
+        for idx, row in df.iterrows():
+            try:
+                result.append({
+                    "rank": len(result) + 1,
+                    "code": str(row['代码']),
+                    "name": str(row['名称']),
+                    "price": round(float(row['最新价']), 2),
+                    "change_pct": round(float(row['涨跌幅']), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": format_volume(row['成交量']) if '成交量' in row else '--',
+                    "amount": format_volume(row['成交额']) if '成交额' in row else '--',
+                    "turnover_rate": round(float(row['换手率']), 2) if '换手率' in row else 0,
+                })
+            except (ValueError, TypeError, KeyError):
+                continue
+        
+        return {
+            "data": result,
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "东方财富"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取跌幅榜失败: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     print("=" * 50)

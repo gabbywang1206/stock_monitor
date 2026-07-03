@@ -564,6 +564,86 @@
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 12px; }
         }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            font-size: 28px;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stock-table th, .stock-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stock-table th {
+            background: var(--bg-card);
+            font-size: 12px;
+            color: var(--text-muted);
+            position: sticky;
+            top: 0;
+        }
     </style>
 </head>
 <body>
@@ -619,6 +699,39 @@
                     <div class="card-total down" id="totalOutflow">--</div>
                 </div>
                 <div class="fund-list" id="outflowList">
+                    <div class="fund-item"><div class="board-name">加载中...</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 个股领涨/领跌榜 -->
+    <div class="fund-flow-section" style="padding-top:0">
+        <div class="fund-flow-grid">
+            <!-- 今日领涨Top5 -->
+            <div class="fund-flow-card">
+                <div class="card-header">
+                    <div class="card-title inflow-title">
+                        <span class="icon">🚀</span>
+                        今日领涨榜 Top5
+                    </div>
+                    <a href="javascript:void(0)" onclick="showTop100('gain')" style="font-size:12px;color:var(--accent);text-decoration:none">查看Top100 ></a>
+                </div>
+                <div class="fund-list" id="gainList">
+                    <div class="fund-item"><div class="board-name">加载中...</div></div>
+                </div>
+            </div>
+            
+            <!-- 今日领跌Top5 -->
+            <div class="fund-flow-card">
+                <div class="card-header">
+                    <div class="card-title outflow-title">
+                        <span class="icon">💧</span>
+                        今日领跌榜 Top5
+                    </div>
+                    <a href="javascript:void(0)" onclick="showTop100('drop')" style="font-size:12px;color:var(--accent);text-decoration:none">查看Top100 ></a>
+                </div>
+                <div class="fund-list" id="dropList">
                     <div class="fund-item"><div class="board-name">加载中...</div></div>
                 </div>
             </div>
@@ -683,12 +796,42 @@
     <!-- 错误提示 -->
     <div class="error-toast" id="errorToast"></div>
 
+    <!-- Top100 弹窗 -->
+    <div class="modal-overlay" id="top100Modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Top100 榜单</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>股票代码</th>
+                            <th>股票名称</th>
+                            <th>最新价</th>
+                            <th>涨跌幅</th>
+                            <th>涨跌额</th>
+                            <th>成交量</th>
+                            <th>换手率</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 全局状态
         let currentTab = 'industry';
         let industryData = [];
         let conceptData = [];
         let indexData = {};
+        let gainData = [];
+        let dropData = [];
         let isLoading = false;
         let refreshTimer = null;
         const REFRESH_INTERVAL = 5000; // 5秒自动刷新
@@ -769,10 +912,12 @@
             btn.disabled = true;
 
             try {
-                const [indRes, conRes, idxRes] = await Promise.allSettled([
+                const [indRes, conRes, idxRes, gainRes, dropRes] = await Promise.allSettled([
                     fetchData('/api/industry'),
                     fetchData('/api/concept'),
                     fetchData('/api/index'),
+                    fetchData('/api/stock_gain'),
+                    fetchData('/api/stock_drop'),
                 ]);
 
                 if (indRes.status === 'fulfilled' && indRes.value.data) {
@@ -787,6 +932,16 @@
                 if (idxRes.status === 'fulfilled' && idxRes.value.data) {
                     indexData = idxRes.value.data;
                     renderIndexCards();
+                }
+
+                if (gainRes.status === 'fulfilled' && gainRes.value.data) {
+                    gainData = gainRes.value.data;
+                    renderGainList();
+                }
+
+                if (dropRes.status === 'fulfilled' && dropRes.value.data) {
+                    dropData = dropRes.value.data;
+                    renderDropList();
                 }
 
                 renderFundFlow();
@@ -944,6 +1099,87 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 5000);
         }
+
+        // 渲染领涨榜
+        function renderGainList() {
+            const list = document.getElementById('gainList');
+            const top5 = gainData.slice(0, 5);
+            
+            list.innerHTML = top5.map((item, i) => {
+                const rankCls = i < 3 ? ` rank-${i+1}` : '';
+                return `
+                    <div class="fund-item">
+                        <div class="rank-num${rankCls}">${i+1}</div>
+                        <div class="board-name">${item.name}</div>
+                        <div class="board-change up">+${item.change_pct.toFixed(2)}%</div>
+                        <div class="amount" style="color:var(--text-muted);font-size:12px">${item.volume}</div>
+                    </div>
+                `;
+            }).join('') || '<div class="fund-item"><div class="board-name">暂无数据</div></div>';
+        }
+
+        // 渲染领跌榜
+        function renderDropList() {
+            const list = document.getElementById('dropList');
+            const top5 = dropData.slice(0, 5);
+            
+            list.innerHTML = top5.map((item, i) => {
+                const rankCls = i < 3 ? ` rank-${i+1}` : '';
+                return `
+                    <div class="fund-item">
+                        <div class="rank-num${rankCls}">${i+1}</div>
+                        <div class="board-name">${item.name}</div>
+                        <div class="board-change down">${item.change_pct.toFixed(2)}%</div>
+                        <div class="amount" style="color:var(--text-muted);font-size:12px">${item.volume}</div>
+                    </div>
+                `;
+            }).join('') || '<div class="fund-item"><div class="board-name">暂无数据</div></div>';
+        }
+
+        // 显示Top100弹窗
+        function showTop100(type) {
+            const modal = document.getElementById('top100Modal');
+            const title = document.getElementById('modalTitle');
+            const tbody = document.getElementById('modalTableBody');
+            
+            const data = type === 'gain' ? gainData : dropData;
+            title.textContent = type === 'gain' ? '今日领涨榜 Top100' : '今日领跌榜 Top100';
+            
+            let html = '';
+            data.forEach(item => {
+                const cls = item.change_pct > 0 ? 'up' : item.change_pct < 0 ? 'down' : 'flat';
+                const sign = item.change_pct > 0 ? '+' : '';
+                const rankCls = item.rank <= 3 ? `rank-${item.rank}` : '';
+                
+                html += `
+                    <tr>
+                        <td class="${rankCls}" style="font-weight:700">${item.rank}</td>
+                        <td>${item.code}</td>
+                        <td style="font-weight:600">${item.name}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                        <td class="${cls}" style="font-weight:700">${sign}${item.change_pct.toFixed(2)}%</td>
+                        <td class="${cls}">${sign}${item.change.toFixed(2)}</td>
+                        <td>${item.volume}</td>
+                        <td>${item.turnover_rate.toFixed(2)}%</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:40px">暂无数据</td></tr>';
+            modal.classList.add('active');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('top100Modal').classList.remove('active');
+        }
+
+        // 点击遮罩关闭弹窗
+        document.getElementById('top100Modal').addEventListener('click', (e) => {
+            if (e.target.id === 'top100Modal') {
+                closeModal();
+            }
+        });
 
         // 初始化
         (async function init() {

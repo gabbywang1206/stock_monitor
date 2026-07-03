@@ -274,3 +274,100 @@ async def get_index_data():
 async def health_check():
     """健康检查"""
     return {"status": "ok", "time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S")}
+
+
+@app.get("/api/stock_gain")
+async def get_stock_gain():
+    """获取今日个股涨幅榜 Top100"""
+    try:
+        import akshare as ak
+        
+        # 使用实时行情接口
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_em(), timeout_seconds=8)
+        
+        if df is None:
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "error": "数据获取超时"
+            }
+        
+        # 按涨跌幅排序，取前100
+        df = df.sort_values(by='涨跌幅', ascending=False).head(100)
+        
+        result = []
+        for idx, row in df.iterrows():
+            try:
+                result.append({
+                    "rank": len(result) + 1,
+                    "code": str(row['代码']),
+                    "name": str(row['名称']),
+                    "price": round(float(row['最新价']), 2),
+                    "change_pct": round(float(row['涨跌幅']), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row['成交量']) if '成交量' in row else '--',
+                    "amount": str(row['成交额']) if '成交额' in row else '--',
+                    "turnover_rate": round(float(row['换手率']), 2) if '换手率' in row else 0,
+                })
+            except (ValueError, TypeError, KeyError):
+                continue
+        
+        return {
+            "data": result,
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "东方财富"
+        }
+    except Exception as e:
+        return {
+            "data": [],
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "error": f"获取涨幅榜失败: {str(e)}"
+        }
+
+
+@app.get("/api/stock_drop")
+async def get_stock_drop():
+    """获取今日个股跌幅榜 Top100"""
+    try:
+        import akshare as ak
+        
+        df = fetch_with_timeout(lambda: ak.stock_zh_a_spot_em(), timeout_seconds=8)
+        
+        if df is None:
+            return {
+                "data": [],
+                "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+                "error": "数据获取超时"
+            }
+        
+        # 按涨跌幅排序，取后100（跌幅最大）
+        df = df.sort_values(by='涨跌幅', ascending=True).head(100)
+        
+        result = []
+        for idx, row in df.iterrows():
+            try:
+                result.append({
+                    "rank": len(result) + 1,
+                    "code": str(row['代码']),
+                    "name": str(row['名称']),
+                    "price": round(float(row['最新价']), 2),
+                    "change_pct": round(float(row['涨跌幅']), 2),
+                    "change": round(float(row['涨跌额']), 2),
+                    "volume": str(row['成交量']) if '成交量' in row else '--',
+                    "amount": str(row['成交额']) if '成交额' in row else '--',
+                    "turnover_rate": round(float(row['换手率']), 2) if '换手率' in row else 0,
+                })
+            except (ValueError, TypeError, KeyError):
+                continue
+        
+        return {
+            "data": result,
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "source": "东方财富"
+        }
+    except Exception as e:
+        return {
+            "data": [],
+            "update_time": datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            "error": f"获取跌幅榜失败: {str(e)}"
+        }
